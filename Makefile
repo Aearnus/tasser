@@ -11,4 +11,5 @@ clean:
 	rm -f tasser-dist.tar.gz
 	rm -f InjectedLibrary.so
 	rm -f XlibExample.out
-	rm *.o
+	rm -f *.o
+	rm -f *.gch
