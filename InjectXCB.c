@@ -11,20 +11,28 @@ xcb_generic_event_t* xcb_poll_for_event(xcb_connection_t* c) {
     xcb_poll_for_event_t xcb_poll_for_event_o;
     xcb_poll_for_event_o = (xcb_poll_for_event_t)dlsym(RTLD_NEXT,"xcb_poll_for_event");
     xcb_generic_event_t* returnEvent = xcb_poll_for_event_o(c);
-    UniversalKeyboardEvent* myEvent = (UniversalKeyboardEvent*)malloc(sizeof(UniversalKeyboardEvent));
+    //decode XCB's event into my universal event
+    UniversalEvent* myEvent = (UniversalEvent*)malloc(sizeof(UniversalEvent));
     if (returnEvent != 0) {
         //https://xcb.freedesktop.org/tutorial/events/
         if (returnEvent->response_type == XCB_KEY_PRESS) {
             myEvent->event_action = KEY_DOWN;
             myEvent->keycode = ((xcb_key_press_event_t*)returnEvent)->detail;
+            //modify my universal event
+            handleUniversalEvents(myEvent);
+            //repopulate the XCB event
+            ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
         } else if (returnEvent->response_type == XCB_KEY_RELEASE){
             myEvent->event_action = KEY_UP;
             myEvent->keycode = ((xcb_key_release_event_t*)returnEvent)->detail;
+            //modify my universal event
+            handleUniversalEvents(myEvent);
+            //repopulate the XCB event
+            ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
         } else {
-            myEvent = 0;
+            myEvent->event_action = UNKNOWN;
         }
     }
-    handleUniversalEvents(myEvent);
     free(myEvent);
     return returnEvent;
 }

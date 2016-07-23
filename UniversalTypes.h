@@ -6,10 +6,11 @@ typedef enum {
 
 typedef enum {
     KEY_UP,
-    KEY_DOWN
+    KEY_DOWN,
+    UNKNOWN
 } EventAction;
 
-typedef struct UniversalKeyboardEvent {
+typedef struct UniversalEvent {
     EventAction event_action;
     unsigned int keycode;
-} UniversalKeyboardEvent;
+} UniversalEvent;
