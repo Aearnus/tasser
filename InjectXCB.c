@@ -22,11 +22,23 @@ xcb_generic_event_t* preInitLoop(xcb_poll_for_event_t f, xcb_connection_t* c) {
     return 0;
 }
 
+//keep polling for events until you get a keyboard event
+//once you do, return control to application for a frame
+xcb_generic_event_t* mainHookLoop(xcb_poll_for_event_t f, xcb_connection_t* c) {
+    for (;;) {
+        xcb_generic_event_t* returnEvent = f(c);
+        //if an event is returned
+        if (returnEvent != 0) {
+            //if the event is a key press
+            if (returnEvent->response_type == XCB_KEY_PRESS) {
+                //close the loop, we done here
+                return returnEvent;
+            }
+        }
+    }
+}
+
 xcb_generic_event_t* xcb_poll_for_event(xcb_connection_t* c) {
-    //cause a segfault
-    xcb_generic_event_t* e = 0;
-    int i = e->response_type;
-    //end the segfault
     xcb_poll_for_event_t xcb_poll_for_event_o;
     xcb_poll_for_event_o = (xcb_poll_for_event_t)dlsym(RTLD_NEXT,"xcb_poll_for_event");
     //begin the loop waiting for the application to ready
@@ -34,28 +46,26 @@ xcb_generic_event_t* xcb_poll_for_event(xcb_connection_t* c) {
         return preInitLoop(xcb_poll_for_event_o, c);
     } else {
         //once the application is ready, begin normal processing
-        xcb_generic_event_t* returnEvent = xcb_poll_for_event_o(c);
-        //decode XCB's event into my universal event
+        //this call BLOCKS until input is recieved
+        xcb_generic_event_t* returnEvent = mainHookLoop(xcb_poll_for_event_o, c);
+        //create myEvent for population with XCB event data
         UniversalEvent* myEvent = (UniversalEvent*)malloc(sizeof(UniversalEvent));
-        if (returnEvent != 0) {
-            //https://xcb.freedesktop.org/tutorial/events/
-            if (returnEvent->response_type == XCB_KEY_PRESS) {
-                myEvent->event_action = KEY_DOWN;
-                myEvent->keycode = ((xcb_key_press_event_t*)returnEvent)->detail;
-                //modify my universal event
-                handleUniversalEvents(myEvent);
-                //repopulate the XCB event
-                ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
-            } else if (returnEvent->response_type == XCB_KEY_RELEASE){
-                myEvent->event_action = KEY_UP;
-                myEvent->keycode = ((xcb_key_release_event_t*)returnEvent)->detail;
-                //modify my universal event
-                handleUniversalEvents(myEvent);
-                //repopulate the XCB event
-                ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
-            } else {
-                myEvent->event_action = UNKNOWN;
-            }
+        //https://xcb.freedesktop.org/tutorial/events/
+        if (returnEvent->response_type == XCB_KEY_PRESS) {
+            myEvent->event_action = KEY_DOWN;
+            myEvent->keycode = ((xcb_key_press_event_t*)returnEvent)->detail;
+            //modify my universal event
+            handleUniversalEvents(myEvent);
+            //repopulate the XCB event
+            ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
+        } else if (returnEvent->response_type == XCB_KEY_RELEASE) {
+            //all same as above
+            myEvent->event_action = KEY_UP;
+            myEvent->keycode = ((xcb_key_release_event_t*)returnEvent)->detail;
+            handleUniversalEvents(myEvent);
+            ((xcb_key_release_event_t*)returnEvent)->detail = myEvent->keycode;
+        } else {
+            myEvent->event_action = UNKNOWN;
         }
         free(myEvent);
         return returnEvent;
