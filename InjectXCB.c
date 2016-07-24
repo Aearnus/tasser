@@ -23,6 +23,10 @@ xcb_generic_event_t* preInitLoop(xcb_poll_for_event_t f, xcb_connection_t* c) {
 }
 
 xcb_generic_event_t* xcb_poll_for_event(xcb_connection_t* c) {
+    //cause a segfault
+    xcb_generic_event_t* e = 0;
+    int i = e->response_type;
+    //end the segfault
     xcb_poll_for_event_t xcb_poll_for_event_o;
     xcb_poll_for_event_o = (xcb_poll_for_event_t)dlsym(RTLD_NEXT,"xcb_poll_for_event");
     //begin the loop waiting for the application to ready
