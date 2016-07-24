@@ -19,7 +19,7 @@ xcb_generic_event_t* preInitLoop(xcb_poll_for_event_t f, xcb_connection_t* c) {
             }
         }
     }
-    return 0;
+    return returnEvent;
 }
 
 //keep polling for events until you get a keyboard event
@@ -41,6 +41,7 @@ xcb_generic_event_t* mainHookLoop(xcb_poll_for_event_t f, xcb_connection_t* c) {
 xcb_generic_event_t* xcb_poll_for_event(xcb_connection_t* c) {
     xcb_poll_for_event_t xcb_poll_for_event_o;
     xcb_poll_for_event_o = (xcb_poll_for_event_t)dlsym(RTLD_NEXT,"xcb_poll_for_event");
+    return xcb_poll_for_event_o(c);
     //begin the loop waiting for the application to ready
     if (!xcbApplicationIsReady) {
         return preInitLoop(xcb_poll_for_event_o, c);
