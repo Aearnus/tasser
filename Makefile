@@ -1,4 +1,4 @@
-FILES = InjectedLibrary.c InjectXCB.c
+FILES = InjectedLibrary.c InjectXCB.c InjectX11.c
 
 all:
 	gcc -g -ldl -lxcb -shared -fPIC -o InjectedLibrary.so $(FILES)
